@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: aegis
+    runtime: python
+    plan: free
+    buildCommand: pip install fastapi "uvicorn[standard]" pydantic pydantic-settings SQLAlchemy scikit-learn numpy prometheus-client
+    startCommand: uvicorn aegis.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: AEGIS_API_KEYS
+        value: demo-key
+      - key: AEGIS_PII_SECRET
+        generateValue: true
