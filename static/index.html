@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aegis — Risk Console</title>
+<style>
+  :root{
+    --bg:#0B1220;--panel:#121C2E;--panel-2:#0E1726;--line:#22304A;--ink:#E7EEF8;--muted:#8497B3;
+    --brand:#3B82F6;--allow:#22C55E;--step:#EAB308;--review:#F97316;--block:#EF4444;
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:1000px;margin:0 auto;padding:22px 18px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#3B82F6,#1D4ED8);display:grid;place-items:center;box-shadow:0 8px 22px -10px #3b82f6}
+  h1{font-size:20px;margin:0;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .key{display:flex;gap:8px;align-items:center}
+  .key input{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:8px 11px;font:inherit;font-size:13px;width:150px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:780px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 14px}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 5px}
+  input.f,select.f{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:9px 11px;font:inherit;font-size:14px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .scenarios{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:6px}
+  .chip{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:12.5px;cursor:pointer}
+  .chip:hover{border-color:var(--brand)}
+  .btn{margin-top:14px;width:100%;background:linear-gradient(120deg,#3B82F6,#1D4ED8);color:#fff;border:0;border-radius:11px;padding:12px;font:inherit;font-weight:700;font-size:15px;cursor:pointer}
+  .verdict{margin-top:16px;border-radius:13px;padding:16px;border:1px solid var(--line);display:none}
+  .verdict.show{display:block;animation:pop .25s ease}
+  @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:none;opacity:1}}
+  .vhead{display:flex;align-items:center;justify-content:space-between}
+  .vbadge{font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:13px;padding:6px 12px;border-radius:8px}
+  .allow{background:rgba(34,197,94,.15);color:var(--allow)}
+  .step_up{background:rgba(234,179,8,.15);color:var(--step)}
+  .review{background:rgba(249,115,22,.15);color:var(--review)}
+  .block{background:rgba(239,68,68,.15);color:var(--block)}
+  .gauge{height:9px;background:var(--panel-2);border-radius:99px;overflow:hidden;margin:14px 0 6px}
+  .gauge>div{height:100%;border-radius:99px;transition:width .4s ease}
+  .reasons{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:7px}
+  .reasons li{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:8px 11px}
+  .reasons .w{color:var(--muted);font-variant-numeric:tabular-nums}
+  .queue{display:flex;flex-direction:column;gap:9px;max-height:520px;overflow:auto}
+  .qitem{background:var(--panel-2);border:1px solid var(--line);border-radius:11px;padding:11px 13px}
+  .qtop{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .qmeta{font-size:11.5px;color:var(--muted);font-family:ui-monospace,monospace}
+  .qreasons{font-size:12px;color:var(--muted);margin-top:6px}
+  .qactions{display:flex;gap:7px;margin-top:9px}
+  .qbtn{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:7px;font-size:12.5px;cursor:pointer}
+  .qbtn.fraud:hover{border-color:var(--block);color:var(--block)}
+  .qbtn.ok:hover{border-color:var(--allow);color:var(--allow)}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:24px}
+  .statbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .stat{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12.5px}
+  .stat b{font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V5l-8-3Z"/></svg></div>
+      <div><h1>Aegis Risk Console</h1><div class="sub">Adaptive account-takeover &amp; transaction-risk decisioning</div></div>
+    </div>
+    <div class="key"><label style="margin:0">API key</label><input id="apikey" placeholder="X-API-Key (optional in dev)" /></div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Evaluate an event</h2>
+      <div class="scenarios">
+        <button class="chip" data-s="clean">Normal login</button>
+        <button class="chip" data-s="takeover">Account takeover</button>
+        <button class="chip" data-s="bigtxn">Anomalous transfer</button>
+      </div>
+      <div class="row">
+        <div><label>User ID</label><input class="f" id="user_id" value="alice" /></div>
+        <div><label>Event type</label><select class="f" id="event_type"><option>login</option><option>transaction</option></select></div>
+      </div>
+      <div class="row">
+        <div><label>Latitude</label><input class="f" id="lat" value="28.61" /></div>
+        <div><label>Longitude</label><input class="f" id="lon" value="77.21" /></div>
+      </div>
+      <div class="row">
+        <div><label>Device ID</label><input class="f" id="device_id" value="phone" /></div>
+        <div><label>IP</label><input class="f" id="ip" value="1.1.1.1" /></div>
+      </div>
+      <div class="row">
+        <div><label>Amount (₹, for transactions)</label><input class="f" id="amount" placeholder="—" /></div>
+        <div><label>Failed attempts</label><input class="f" id="failed_attempts" value="0" /></div>
+      </div>
+      <button class="btn" id="go">Get verdict</button>
+      <div id="err" role="alert" style="display:none;margin-top:10px;color:#FCA5A5;font-size:13px"></div>
+
+      <div class="verdict" id="verdict" aria-live="polite">
+        <div class="vhead"><span class="vbadge" id="vbadge"></span><span class="qmeta" id="vid"></span></div>
+        <div class="gauge"><div id="vgauge"></div></div>
+        <div class="qmeta">risk score <b id="vscore"></b> / 100</div>
+        <ul class="reasons" id="vreasons"></ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Review queue</h2>
+      <div class="statbar" id="statbar"></div>
+      <div class="queue" id="queue"><div class="empty">No items flagged yet. Try the “Account takeover” scenario.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const COLORS = { allow:"#22C55E", step_up:"#EAB308", review:"#F97316", block:"#EF4444" };
+const headers = () => { const h = {"content-type":"application/json"}; const k = $("apikey").value.trim(); if (k) h["X-API-Key"]=k; return h; };
+
+const SCENARIOS = {
+  clean:   { user_id:"alice", event_type:"login", lat:"28.61", lon:"77.21", device_id:"phone", ip:"1.1.1.1", amount:"", failed_attempts:"0" },
+  takeover:{ user_id:"alice", event_type:"login", lat:"51.50", lon:"-0.12", device_id:"unknown", ip:"9.9.9.9", amount:"", failed_attempts:"3" },
+  bigtxn:  { user_id:"alice", event_type:"transaction", lat:"28.61", lon:"77.21", device_id:"phone", ip:"1.1.1.1", amount:"250000", failed_attempts:"0" },
+};
+document.querySelectorAll(".chip").forEach((c) => c.onclick = () => {
+  const s = SCENARIOS[c.dataset.s]; for (const k in s) $(k).value = s[k];
+});
+
+function num(v){ return v === "" ? null : Number(v); }
+
+async function evaluate(){
+  const btn = $("go"); const err = $("err");
+  err.style.display = "none";
+  btn.disabled = true; btn.textContent = "Scoring…";
+  try {
+    const body = {
+      user_id: $("user_id").value, event_type: $("event_type").value,
+      lat: num($("lat").value), lon: num($("lon").value),
+      device_id: $("device_id").value || null, ip: $("ip").value || null,
+      amount: num($("amount").value), failed_attempts: Number($("failed_attempts").value || 0),
+    };
+    const res = await fetch("/v1/risk/evaluate", { method:"POST", headers:headers(), body:JSON.stringify(body) });
+    if (!res.ok){
+      const detail = await res.json().catch(() => ({}));
+      throw new Error(detail.detail || `Request failed (${res.status})`);
+    }
+    const d = await res.json();
+    $("verdict").classList.add("show");
+    const b = $("vbadge"); b.className = "vbadge " + d.decision; b.textContent = d.decision.replace("_"," ");
+    $("vid").textContent = d.decision_id.slice(0,8);
+    $("vscore").textContent = d.risk_score;
+    const g = $("vgauge"); g.style.width = d.risk_score + "%"; g.style.background = COLORS[d.decision];
+    $("vreasons").innerHTML = d.reasons.length
+      ? d.reasons.map(r => `<li><span>${r.label}</span><span class="w">+${r.weight}</span></li>`).join("")
+      : `<li><span>No risk signals</span><span class="w">clean</span></li>`;
+    refresh();
+  } catch (e) {
+    err.textContent = e.message; err.style.display = "block";
+  } finally {
+    btn.disabled = false; btn.textContent = "Get verdict";
+  }
+}
+
+async function refresh(){
+  try {
+    const s = await (await fetch("/v1/stats", { headers:headers() })).json();
+    $("statbar").innerHTML = Object.entries(s.decisions).map(([k,v]) => `<div class="stat"><b>${v}</b> ${k}</div>`).join("")
+      + `<div class="stat"><b>${s.pending_review}</b> pending</div>`;
+    const q = await (await fetch("/v1/review-queue", { headers:headers() })).json();
+    $("queue").innerHTML = q.length ? q.map(item => `
+      <div class="qitem">
+        <div class="qtop"><span class="vbadge ${item.decision}">${item.decision}</span><span class="qmeta">score ${item.risk_score} · ${item.user_token.slice(0,8)}</span></div>
+        <div class="qreasons">${item.reasons.map(r=>r.code).join(" · ")}</div>
+        <div class="qactions">
+          <button class="qbtn fraud" onclick="resolve('${item.decision_id}','confirmed_fraud')">Confirm fraud</button>
+          <button class="qbtn ok" onclick="resolve('${item.decision_id}','false_positive')">False positive</button>
+        </div>
+      </div>`).join("") : `<div class="empty">Queue is clear.</div>`;
+  } catch (e) { /* ignore */ }
+}
+
+window.resolve = async (id, label) => {
+  await fetch(`/v1/decisions/${id}/resolve`, { method:"POST", headers:headers(), body:JSON.stringify({label}) });
+  refresh();
+};
+
+$("go").onclick = evaluate;
+refresh();
+</script>
+</body>
+</html>
